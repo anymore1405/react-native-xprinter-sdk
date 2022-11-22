@@ -83,15 +83,36 @@ RCT_EXPORT_METHOD(connectPrinter:(NSString *)host
                   withPort:(nonnull NSNumber *)port
                   success:(RCTResponseSenderBlock)successCallback
                   fail:(RCTResponseSenderBlock)errorCallback) {
-    [[MWIFIManager shareWifiManager] MConnectWithHost:host port:9100 completion: ^(BOOL result){
-            if (result) {
-                connected_ip = host;
-                successCallback(@[@"Connected"]);
-            } else {
-                errorCallback(@[@"Connection failed"]);
-            }
-    }];
+    @try {
+        [[MWIFIManager shareWifiManager] MConnectWithHost:host port:9100 completion: ^(BOOL result){
+                if (result) {
+                    connected_ip = host;
+                    successCallback(@[@"Connected"]);
+                } else {
+                    errorCallback(@[@"Connection failed"]);
+                }
+        }];
+    } @catch (NSException *exception) {
+        errorCallback(@[exception.reason]);
+    }
 }
+
+RCT_EXPORT_METHOD(clearBuffer:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
+    if(!connected_ip) {
+        errorCallback(@[@"No printer connected"]);
+        return;
+    }
+
+    [[MWIFIManager shareWifiManager]  MClearBuffer];
+    successCallback(@[@"ClearBuffer command sent"]);
+}
+
+//RCT_EXPORT_METHOD(didConnectedToPrinter:(NSString *)host
+//                  withPort:(nonnull NSNumber *)port
+//                  success:(RCTResponseSenderBlock)successCallback
+//                  fail:(RCTResponseSenderBlock)errorCallback) {
+//    return [[MWIFIManager shareWifiManager] didConnectedToHost:host port:9100];
+//}
 
 
 RCT_EXPORT_METHOD(sendClearTSCCommand:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
@@ -118,7 +139,7 @@ RCT_EXPORT_METHOD(sendBeepTSCCommand:(nonnull NSNumber*)level andInterval:(nonnu
     }];
 }
 
-RCT_EXPORT_METHOD(sendSetLabelSizeTSCCommand:(NSNumber*)width height:(NSNumber*)height  success:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
+RCT_EXPORT_METHOD(sendSetLabelSizeTSCCommand:(nonnull NSNumber*)width height:(nonnull NSNumber*)height success:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
     if(!connected_ip) {
         errorCallback(@[@"No printer connected"]);
         return;
@@ -130,7 +151,7 @@ RCT_EXPORT_METHOD(sendSetLabelSizeTSCCommand:(NSNumber*)width height:(NSNumber*)
     }];
 }
 
-RCT_EXPORT_METHOD(sendDelayTSCCommand:(NSNumber*)delay success:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
+RCT_EXPORT_METHOD(sendDelayTSCCommand:(nonnull NSNumber*)delay success:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
     if(!connected_ip) {
         errorCallback(@[@"No printer connected"]);
         return;
@@ -202,7 +223,7 @@ RCT_EXPORT_METHOD(sendImageCommand:(NSString *)base64Qr success:(RCTResponseSend
      }
 }
 
-RCT_EXPORT_METHOD(sendImageWithOptionsCommand:(NSString *)base64Qr printerOptions:(NSDictionary *)options success:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
+RCT_EXPORT_METHOD(sendImageWithOptionsCommand:(nonnull NSString *)base64Qr printerOptions:(NSDictionary *)options success:(RCTResponseSenderBlock)successCallback fail:(RCTResponseSenderBlock)errorCallback) {
     @try {
         if(!connected_ip) {
             errorCallback(@[@"No printer connected"]);
@@ -214,12 +235,12 @@ RCT_EXPORT_METHOD(sendImageWithOptionsCommand:(NSString *)base64Qr printerOption
         }
         NSNumber* width = [options valueForKey:@"width"];
         NSNumber* height = [options valueForKey:@"height"];
-        NSNumber* paperHeight = [options valueForKey:@"paperHeight"];
+        NSNumber*
+        paperHeight = [options valueForKey:@"paperHeight"];
         NSURL *url = [NSURL URLWithString:base64Qr];
         NSData *imageData = [NSData dataWithContentsOfURL:url];
         UIImage* image = [UIImage imageWithData:imageData];
         UIImage* printImage = [self getPrintImage:image width:width height:height];
-        NSData *dataImage = UIImagePNGRepresentation(image);
         if(image == nil) {
             errorCallback(@[@"error image convert"]);
         }

@@ -84,7 +84,7 @@ function sendImageCommand(
 
 function sendImageWithOptionsCommand(
   base64: string,
-  opts: { width: number; height: number; paperWidth: number },
+  opts: { width: number; height: number; paperHeight: number },
   callbackSuccess: (msg: string) => void,
   callbackError: (msg: string) => void
 ) {
